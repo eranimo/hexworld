@@ -63,50 +63,45 @@ function createPlanetMesh(scale, degree, scene) {
   return mesh;
 }
 
-export function start() {
-  if (Engine.isSupported()) {
+export function start(canvas: HTMLCanvasElement) {
+  const engine = new Engine(canvas, true);
+  const scene = new Scene(engine);
+  scene.clearColor = new Color4(0.5, 0.5, 0.5, 1.0);
 
-    var canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
-    var engine = new Engine(canvas, true);
-    var scene = new Scene(engine);
-    scene.clearColor = new Color4(0.5, 0.5, 0.5, 1.0);
+  // Camera
+  const camera = new ArcRotateCamera(
+    "camera1",
+    0,
+    0,
+    0,
+    new Vector3(0, 0, -0),
+    scene
+  );
+  camera.setPosition(new Vector3(-60, 0, 0));
+  camera.attachControl(canvas, true);
 
-    // Camera
-    var camera = new ArcRotateCamera(
-      "camera1",
-      0,
-      0,
-      0,
-      new Vector3(0, 0, -0),
-      scene
-    );
-    camera.setPosition(new Vector3(-60, 0, 0));
-    camera.attachControl(canvas, true);
+  // Sun & Moon
+  var sun = new HemisphericLight("sun", new Vector3(0, 0, 1), scene);
+  sun.intensity = 0.6;
+  var moon = new HemisphericLight(
+    "moon",
+    new Vector3(0, 0, -1),
+    scene
+  );
+  moon.intensity = 0.2;
 
-    // Sun & Moon
-    var sun = new HemisphericLight("sun", new Vector3(0, 0, 1), scene);
-    sun.intensity = 0.6;
-    var moon = new HemisphericLight(
-      "moon",
-      new Vector3(0, 0, -1),
-      scene
-    );
-    moon.intensity = 0.2;
+  console.time('Planet');
+  var polygon = createPlanetMesh(20, 150, scene); //This line renders the Icosahedron planet
+  console.timeEnd('Planet');
 
-    console.time('Planet');
-    var polygon = createPlanetMesh(20, 200, scene); //This line renders the Icosahedron planet
-    console.timeEnd('Planet');
+  camera.attachControl(canvas);
 
-    camera.attachControl(canvas);
+  scene.registerBeforeRender(function() {
+    polygon.rotation.y += -0.0005;
+    polygon.rotation.x += -0.0005 / 4;
+  });
 
-    scene.registerBeforeRender(function() {
-      polygon.rotation.y += -0.0005;
-      polygon.rotation.x += -0.0005 / 4;
-    });
-
-    engine.runRenderLoop(function() {
-      scene.render();
-    });
-  }
-  return scene;
+  engine.runRenderLoop(function() {
+    scene.render();
+  });
 }

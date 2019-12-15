@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/",
+    "noImplicitAny": false,
+    "module": "commonjs",
+    "target": "es6",
+    "lib": [
+      "dom",
+      "es5",
+      "es6",
+      "esnext",
+      "scripthost"
+    ],
+    "jsx": "react",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./typings/custom.d.ts",
+    ],
+    "esModuleInterop": true,
+  }
+}

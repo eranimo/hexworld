@@ -1,3 +1,4 @@
-export enum PlanetViewWorkerEvent {
-  INIT = 'INIT',
+export enum PlanetWorkerEvent {
+  GENERATE = 'GENERATE',
+  RENDER = 'RENDER'
 }

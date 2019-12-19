@@ -29,7 +29,7 @@ function getPlanet(scale, degree): Promise<PlanetRenderData> {
 
 
 async function createPlanetMesh(scale, degree, scene) {
-  const material = new StandardMaterial("mat", scene);
+  const material = new StandardMaterial("planet", scene);
   console.time('getPlanet');
   const renderData = await getPlanet(scale, degree);
   console.log('Render data', renderData);
@@ -55,7 +55,7 @@ async function createPlanetMesh(scale, degree, scene) {
 
   vertexData.applyToMesh(mesh, false);
 
-  //mesh.convertToFlatShadedMesh();
+  // mesh.convertToFlatShadedMesh();
 
   mesh.material = material;
   return mesh;
@@ -64,6 +64,7 @@ async function createPlanetMesh(scale, degree, scene) {
 async function start(canvas: HTMLCanvasElement) {
   const engine = new Engine(canvas, true);
   const scene = new Scene(engine);
+  scene.debugLayer.show();
   scene.clearColor = new Color4(0.5, 0.5, 0.5, 1.0);
 
   // Camera
@@ -80,22 +81,24 @@ async function start(canvas: HTMLCanvasElement) {
 
   // Sun & Moon
   var sun = new HemisphericLight("sun", new Vector3(0, 0, 1), scene);
+  sun.diffuse = new Color3(1, 1, 1);
+  sun.groundColor = new Color3(1, 1, 1);
   sun.intensity = 0.6;
-  var moon = new HemisphericLight(
-    "moon",
-    new Vector3(0, 0, -1),
-    scene
-  );
-  moon.intensity = 0.2;
+  // var moon = new HemisphericLight(
+  //   "moon",
+  //   new Vector3(0, 0, -1),
+  //   scene
+  // );
+  // moon.intensity = 0.2;
 
   console.time('createPlanetMesh');
-  var polygon = await createPlanetMesh(20, 150, scene); //This line renders the Icosahedron planet
+  var polygon = await createPlanetMesh(20, 50, scene); //This line renders the Icosahedron planet
   console.timeEnd('createPlanetMesh');
 
-  scene.registerBeforeRender(function() {
-    polygon.rotation.y += -0.0005;
-    polygon.rotation.x += -0.0005 / 4;
-  });
+  // scene.registerBeforeRender(function() {
+  //   polygon.rotation.y += -0.0005;
+  //   polygon.rotation.x += -0.0005 / 4;
+  // });
 
   engine.runRenderLoop(function() {
     scene.render();

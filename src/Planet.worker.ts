@@ -13,6 +13,7 @@ ctx.addEventListener("message", (event) => {
     const { scale, degree } = payload;
     console.time('Planet');
     const planet = new Planet(scale, degree, 'fuck');
+    console.log('Planet', planet);
     console.timeEnd('Planet');
 
     console.time('Render');

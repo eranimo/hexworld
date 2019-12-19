@@ -1,24 +1,28 @@
-import { PlanetWorkerEvent } from './workerTypes';
-import { Planet } from './Planet';
-
-const ctx: Worker = self as any;
+import { Planet, PlanetOptions } from './Planet';
+import * as Comlink from 'comlink';
 
 
+let planet: Planet;
 
-ctx.addEventListener("message", (event) => {
-  const { type, payload } = event.data;
+type PlanetWorkerEvents = {
+  onDraw: () => void,
+}
 
-  console.log('event', event);
-  if (type === PlanetWorkerEvent.GENERATE) {
-    const { scale, degree } = payload;
-    console.time('Planet');
-    const planet = new Planet(scale, degree, 'fuck');
+export const PlanetWorker = {
+  generate(
+    seed: string,
+    options: PlanetOptions
+  ) {
+    planet = new Planet(options, seed);
     console.log('Planet', planet);
-    console.timeEnd('Planet');
 
-    console.time('Render');
-    const renderPayload = planet.render();
-    console.timeEnd('Render');
-    ctx.postMessage({ type: PlanetWorkerEvent.RENDER, payload: renderPayload });
+    setInterval(() => {
+      console.time('updateColors');
+      planet.updateColors();
+      console.timeEnd('updateColors');
+    }, 1000);
+
+    return planet.render();
   }
-});
+};
+Comlink.expose(PlanetWorker)

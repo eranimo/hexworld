@@ -32,6 +32,11 @@ export interface PlanetRenderData {
   uvs: SharedArrayBuffer, // faces.length * 2
 }
 
+export type PlanetOptions = {
+  scale: number;
+  degree: number;
+}
+
 export class Planet {
   scale: number;
   degree: number;
@@ -48,9 +53,11 @@ export class Planet {
   // Deform mesh based on heightmap values
   renderDeformedMesh: boolean = false;
 
-  constructor(scale: number, degree: number, seed: string) {
-    this.scale = scale;
-    this.degree = degree;
+  renderData: PlanetRenderData;
+
+  constructor(options: PlanetOptions, seed: string) {
+    this.scale = options.scale;
+    this.degree = options.degree;
 
     this.planet = {
       faceToTile: [],
@@ -58,7 +65,7 @@ export class Planet {
     };
 
     console.time("Icosphere");
-    this.icosphere = new Icosphere(scale, degree);
+    this.icosphere = new Icosphere(this.scale, this.degree);
     console.timeEnd("Icosphere");
   }
 
@@ -78,6 +85,30 @@ export class Planet {
     return new Vector2(x, 1 - y);
   }
 
+  getColorForFace(faceIndex: number) {
+    // const tile = this.planet.faceToTile[faceIndex]
+    return new Color3(Math.random(), Math.random(), Math.random());
+  }
+
+  updateColors() {
+    const colors: Float32Array = new Float32Array(this.renderData.colors);
+
+    let color: Color3;
+    let colorsCount = 0;
+    for (var n = 0; n < this.icosphere.icosahedron.nodes.length; n++) {
+      var numFaces: number = this.icosphere.icosahedron.nodes[n].f.length;
+      for (var f = 0; f < numFaces; f++) {
+        color = this.getColorForFace(f);
+        colors[colorsCount + 0] = color.r;
+        colors[colorsCount + 1] = color.g;
+        colors[colorsCount + 2] = color.b;
+        colors[colorsCount + 3] = 1.0;
+        colorsCount += 4;
+      }
+    }
+    console.log('updated colors');
+  }
+  
   render(): PlanetRenderData {
     const totalFaceCount = this.icosphere.icosahedron.faces.length;
     const indicesSAB: SharedArrayBuffer = new SharedArrayBuffer(Uint32Array.BYTES_PER_ELEMENT * totalFaceCount * 2 * 3);
@@ -178,11 +209,12 @@ export class Planet {
       }
     }
 
-    return {
+    this.renderData = {
       indices: indicesSAB,
       positions: positionsSAB,
       colors: colorsSAB,
       uvs: uvsSAB,
     };
+    return this.renderData;
   }
 }

@@ -1,6 +1,5 @@
-import { PlanetWorkerEvent } from './workerTypes';
-
 import { Vector3 } from "@babylonjs/core/Maths/math";
+import { Material } from "@babylonjs/core/Materials/material";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Color3, Color4 } from "@babylonjs/core/Legacy/legacy";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
@@ -9,38 +8,34 @@ import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene } from '@babylonjs/core/scene';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
-import { IcosahedronMesh } from './Icosphere';
-import { PlanetRenderData } from './Planet';
+import * as Comlink from 'comlink';
+import { PlanetWorker } from './Planet.worker';
 
-const planetWorker = new Worker('./Planet.worker.ts');
+const worker = new Worker('./Planet.worker.ts');
+const planet = Comlink.wrap(worker) as unknown as typeof PlanetWorker;
 
-function getPlanet(scale, degree): Promise<PlanetRenderData> {
-  planetWorker.postMessage({ type: PlanetWorkerEvent.GENERATE, payload: { scale, degree } });
-  return new Promise((resolve, reject) => {
-    planetWorker.addEventListener('message', event => {
-      const { type, payload } = event.data;
+let material: StandardMaterial;
+let mesh: Mesh;
 
-      if (type === PlanetWorkerEvent.RENDER) {
-        resolve(payload);
-      }
-    });
-  });
+function onDraw() {
+  console.log('onDraw');
+  mesh.updateCache(true);
 }
 
-
 async function createPlanetMesh(scale, degree, scene) {
-  const material = new StandardMaterial("planet", scene);
+  material = new StandardMaterial("planet", scene);
   console.time('getPlanet');
-  const renderData = await getPlanet(scale, degree);
+  const options = { scale, degree };
+  const renderData = await planet.generate('fuck', options);
   console.log('Render data', renderData);
   console.timeEnd('getPlanet');
 
   const indices = new Uint32Array(renderData.indices);
-  const colors = new Float32Array(renderData.colors);
+  let colors = new Float32Array(renderData.colors);
   const positions = new Float32Array(renderData.positions);
   const uvs: Array<number> = [];
 
-  var mesh = new Mesh("planet", scene);
+  mesh = new Mesh("planet", scene);
   mesh.useVertexColors = true;
 
   var vertexData = new VertexData();
@@ -53,9 +48,18 @@ async function createPlanetMesh(scale, degree, scene) {
   VertexData.ComputeNormals(positions, indices, normals);
   vertexData.normals = normals;
 
-  vertexData.applyToMesh(mesh, false);
+  vertexData.applyToMesh(mesh, true);
 
   // mesh.convertToFlatShadedMesh();
+
+  setInterval(() => {
+    console.time('update loop');
+    // colors = new Float32Array(renderData.colors)
+    // vertexData.colors = colors;
+    // material.markAsDirty(Material.AllDirtyFlag);
+    vertexData.updateMesh(mesh);
+    console.timeEnd('update loop');
+  }, 1000);
 
   mesh.material = material;
   return mesh;
@@ -82,8 +86,9 @@ async function start(canvas: HTMLCanvasElement) {
   // Sun & Moon
   var sun = new HemisphericLight("sun", new Vector3(0, 0, 1), scene);
   sun.diffuse = new Color3(1, 1, 1);
+  sun.specular = new Color3(1, 1, 1);
   sun.groundColor = new Color3(1, 1, 1);
-  sun.intensity = 0.6;
+  sun.intensity = 1;
   // var moon = new HemisphericLight(
   //   "moon",
   //   new Vector3(0, 0, -1),

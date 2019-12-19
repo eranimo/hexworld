@@ -15,7 +15,10 @@
   },
   "dependencies": {
     "@babylonjs/core": "4.1.0-beta.15",
-    "memoizee": "^0.4.14"
+    "comlink": "^4.2.0",
+    "memoizee": "^0.4.14",
+    "rxjs": "^6.5.3",
+    "uuid": "^3.3.3"
   },
   "browserslist": [
     "last 1 Chrome versions"

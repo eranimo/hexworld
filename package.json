@@ -14,7 +14,8 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "@babylonjs/core": "4.1.0-beta.15"
+    "@babylonjs/core": "4.1.0-beta.15",
+    "memoizee": "^0.4.14"
   },
   "browserslist": [
     "last 1 Chrome versions"

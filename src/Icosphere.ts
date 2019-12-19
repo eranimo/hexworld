@@ -1,4 +1,5 @@
 import { Vector3 } from "@babylonjs/core/Maths/math";
+import { memoize } from "./utils/decorators";
 
 export interface IcoNode {
   p: Vector3;
@@ -121,6 +122,53 @@ export class Icosphere {
     ];
   }
 
+  @memoize()
+  private getFaceEdge(face: IcoFace, edgeIndex: number): IcoEdge {
+    return this.icosahedron.edges[face.e[edgeIndex]];
+  }
+
+  @memoize()
+  private getEdgeNode0(face: IcoFace, k: number) {
+    return face.n[0] === this.getFaceEdge(face, 0).n[0]
+      ? this.getFaceEdge(face, 0).subdivided_n[k]
+      : this.getFaceEdge(face, 0).subdivided_n[this.degree - 2 - k];
+  }
+
+  @memoize()
+  private getEdgeNode1(face: IcoFace, k: number) {
+    return face.n[1] === this.getFaceEdge(face, 1).n[0]
+      ? this.getFaceEdge(face, 1).subdivided_n[k]
+      : this.getFaceEdge(face, 1).subdivided_n[this.degree - 2 - k];
+  }
+
+  @memoize()
+  private getEdgeNode2(face: IcoFace, k: number) {
+    return face.n[0] === this.getFaceEdge(face, 2).n[0]
+      ? this.getFaceEdge(face, 2).subdivided_n[k]
+      : this.getFaceEdge(face, 2).subdivided_n[this.degree - 2 - k];
+  }
+
+  @memoize()
+  private getEdgeEdge0(face: IcoFace, k: number) {
+    return face.n[0] === this.getFaceEdge(face, 0).n[0]
+      ? this.getFaceEdge(face, 0).subdivided_e[k]
+      : this.getFaceEdge(face, 0).subdivided_e[this.degree - 1 - k];
+  }
+
+  @memoize()
+  private getEdgeEdge1(face: IcoFace, k: number) {
+    return face.n[1] === this.getFaceEdge(face, 1).n[0]
+      ? this.getFaceEdge(face, 1).subdivided_e[k]
+      : this.getFaceEdge(face, 1).subdivided_e[this.degree - 1 - k];
+  }
+
+  @memoize()
+  private getEdgeEdge2(face: IcoFace, k: number) {
+    return face.n[0] === this.getFaceEdge(face, 2).n[0]
+      ? this.getFaceEdge(face, 2).subdivided_e[k]
+      : this.getFaceEdge(face, 2).subdivided_e[this.degree - 1 - k];
+  }
+
   subdivide(): void {
     var nodes: Array<IcoNode> = [];
     for (var i = 0; i < this.icosahedron.nodes.length; ++i) {
@@ -160,47 +208,17 @@ export class Icosphere {
     for (var i = 0; i < this.icosahedron.faces.length; ++i) {
       var face: IcoFace = this.icosahedron.faces[i];
       var edge0: IcoEdge = this.icosahedron.edges[face.e[0]];
-      var edge1: IcoEdge = this.icosahedron.edges[face.e[1]];
-      var edge2: IcoEdge = this.icosahedron.edges[face.e[2]];
-      var point0: Vector3 = this.icosahedron.nodes[face.n[0]].p;
-      var point1: Vector3 = this.icosahedron.nodes[face.n[1]].p;
-      var point2: Vector3 = this.icosahedron.nodes[face.n[2]].p;
-      var delta: Vector3 = point1.subtract(point0);
-
-      var getEdgeNode0 =
-        face.n[0] === edge0.n[0]
-          ? k => {
-              return edge0.subdivided_n[k];
-            }
-          : k => {
-              return edge0.subdivided_n[this.degree - 2 - k];
-            };
-      var getEdgeNode1 =
-        face.n[1] === edge1.n[0]
-          ? k => {
-              return edge1.subdivided_n[k];
-            }
-          : k => {
-              return edge1.subdivided_n[this.degree - 2 - k];
-            };
-      var getEdgeNode2 =
-        face.n[0] === edge2.n[0]
-          ? k => {
-              return edge2.subdivided_n[k];
-            }
-          : k => {
-              return edge2.subdivided_n[this.degree - 2 - k];
-            };
 
       var faceNodes: Array<number> = [];
       faceNodes.push(face.n[0]);
-      for (var j = 0; j < edge0.subdivided_n.length; ++j)
-        faceNodes.push(getEdgeNode0(j));
+      for (var j = 0; j < edge0.subdivided_n.length; ++j) {
+        faceNodes.push(this.getEdgeNode0(face, j));
+      }
       faceNodes.push(face.n[1]);
       for (var s = 1; s < this.degree; ++s) {
-        faceNodes.push(getEdgeNode2(s - 1));
-        var p0: Vector3 = nodes[getEdgeNode2(s - 1)].p;
-        var p1: Vector3 = nodes[getEdgeNode1(s - 1)].p;
+        faceNodes.push(this.getEdgeNode2(face, s - 1));
+        var p0: Vector3 = nodes[this.getEdgeNode2(face, s - 1)].p;
+        var p1: Vector3 = nodes[this.getEdgeNode1(face, s - 1)].p;
         for (var t = 1; t < this.degree - s; ++t) {
           faceNodes.push(nodes.length);
           nodes.push({
@@ -209,37 +227,12 @@ export class Icosphere {
             f: []
           });
         }
-        faceNodes.push(getEdgeNode1(s - 1));
+        faceNodes.push(this.getEdgeNode1(face, s - 1));
       }
       faceNodes.push(face.n[2]);
 
-      var getEdgeEdge0 =
-        face.n[0] === edge0.n[0]
-          ? k => {
-              return edge0.subdivided_e[k];
-            }
-          : k => {
-              return edge0.subdivided_e[this.degree - 1 - k];
-            };
-      var getEdgeEdge1 =
-        face.n[1] === edge1.n[0]
-          ? k => {
-              return edge1.subdivided_e[k];
-            }
-          : k => {
-              return edge1.subdivided_e[this.degree - 1 - k];
-            };
-      var getEdgeEdge2 =
-        face.n[0] === edge2.n[0]
-          ? k => {
-              return edge2.subdivided_e[k];
-            }
-          : k => {
-              return edge2.subdivided_e[this.degree - 1 - k];
-            };
-
       var faceEdges0: Array<number> = [];
-      for (var j = 0; j < this.degree; ++j) faceEdges0.push(getEdgeEdge0(j));
+      for (var j = 0; j < this.degree; ++j) faceEdges0.push(this.getEdgeEdge0(face, j));
       var nodeIndex: number = this.degree + 1;
       for (var s = 1; s < this.degree; ++s) {
         for (var t = 0; t < this.degree - s; ++t) {
@@ -270,14 +263,14 @@ export class Icosphere {
           edges.push(edge);
           ++nodeIndex;
         }
-        faceEdges1.push(getEdgeEdge1(s));
+        faceEdges1.push(this.getEdgeEdge1(face, s));
         nodeIndex += 2;
       }
 
       var faceEdges2: Array<number> = [];
       nodeIndex = 1;
       for (var s = 0; s < this.degree; ++s) {
-        faceEdges2.push(getEdgeEdge2(s));
+        faceEdges2.push(this.getEdgeEdge2(face, s));
         for (var t = 1; t < this.degree - s; ++t) {
           faceEdges2.push(edges.length);
           var edge: IcoEdge = {
@@ -381,8 +374,9 @@ export class Icosphere {
   }
 
   correctFaceIndices(): void {
+    let node: IcoNode;
     for (var i = 0; i < this.icosahedron.nodes.length; ++i) {
-      var node: IcoNode = this.icosahedron.nodes[i];
+      node = this.icosahedron.nodes[i];
       var faceIndex: number = node.f[0];
       for (var j = 1; j < node.f.length - 1; ++j) {
         faceIndex = this.findNextFaceIndex(i, faceIndex);
@@ -409,7 +403,7 @@ export class Icosphere {
   }
 
   findNextFaceIndex(nodeIndex: number, faceIndex: number): number {
-    var node: IcoNode = this.icosahedron.nodes[nodeIndex];
+    // var node: IcoNode = this.icosahedron.nodes[nodeIndex];
     var face: IcoFace = this.icosahedron.faces[faceIndex];
     var nodeFaceIndex: number = face.n.indexOf(nodeIndex);
     var edge: IcoEdge = this.icosahedron.edges[face.e[(nodeFaceIndex + 2) % 3]];

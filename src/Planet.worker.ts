@@ -16,11 +16,11 @@ export const PlanetWorker = {
     planet = new Planet(options, seed);
     console.log('Planet', planet);
 
-    setInterval(() => {
-      console.time('updateColors');
-      planet.updateColors();
-      console.timeEnd('updateColors');
-    }, 1000);
+    // setInterval(() => {
+    //   console.time('updateColors');
+    //   planet.updateColors();
+    //   console.timeEnd('updateColors');
+    // }, 1000);
 
     return planet.render();
   }

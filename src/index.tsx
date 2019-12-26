@@ -22,6 +22,10 @@ function onDraw() {
   mesh.updateCache(true);
 }
 
+function cellsForPlanetScale(scale: number): number {
+  return 10 * (scale ** 2) + 2;
+}
+
 async function createPlanetMesh(scale, degree, scene) {
   material = new StandardMaterial("planet", scene);
   console.time('getPlanet');
@@ -52,14 +56,14 @@ async function createPlanetMesh(scale, degree, scene) {
 
   // mesh.convertToFlatShadedMesh();
 
-  setInterval(() => {
-    console.time('update loop');
-    // colors = new Float32Array(renderData.colors)
-    // vertexData.colors = colors;
-    // material.markAsDirty(Material.AllDirtyFlag);
-    vertexData.updateMesh(mesh);
-    console.timeEnd('update loop');
-  }, 1000);
+  // setInterval(() => {
+  //   console.time('update loop');
+  //   // colors = new Float32Array(renderData.colors)
+  //   // vertexData.colors = colors;
+  //   // material.markAsDirty(Material.AllDirtyFlag);
+  //   vertexData.updateMesh(mesh);
+  //   console.timeEnd('update loop');
+  // }, 1000);
 
   mesh.material = material;
   return mesh;
@@ -97,7 +101,7 @@ async function start(canvas: HTMLCanvasElement) {
   // moon.intensity = 0.2;
 
   console.time('createPlanetMesh');
-  var polygon = await createPlanetMesh(20, 50, scene); //This line renders the Icosahedron planet
+  var polygon = await createPlanetMesh(20, 150, scene); //This line renders the Icosahedron planet
   console.timeEnd('createPlanetMesh');
 
   // scene.registerBeforeRender(function() {
